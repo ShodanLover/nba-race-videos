@@ -45,6 +45,14 @@ async function grab(page, f) {
   const port = server.address().port;
   const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 
+  const eventsOut = argOf("--events");
+  if (eventsOut) {
+    const { page } = await openPage(browser, port);
+    fs.writeFileSync(eventsOut, JSON.stringify(await page.evaluate(() => window.simulateEvents())));
+    console.log("wrote", eventsOut);
+    await browser.close(); server.close(); return;
+  }
+
   if (preview) {
     const { page } = await openPage(browser, port);
     for (const f of preview) { fs.writeFileSync(`${outFile}_${f}.jpg`, await grab(page, f)); console.log("frame", f); }

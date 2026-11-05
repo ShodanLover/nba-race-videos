@@ -121,6 +121,7 @@ function stepConfetti(dt, time) {
 
 // ---------- state ----------
 let cfg, players, seasons, simFrame = 0, totalFrames;
+const EVENTS = []; let lastTop3 = null;
 let lastLeader = null, leaderCooldown = 0, banner = null, seasonPop = 0, lastSeasonLabel = null, endTriggered = false;
 const crownState = { x: 0, y: 0 };
 
@@ -174,9 +175,13 @@ function step(f) {
   leaderCooldown -= dt;
   if (leader && lastLeader && leader.id !== lastLeader && f > cfg.introFrames && leaderCooldown <= 0 && !hold) {
     burst(160); banner = { text: "NEW #1!", name: leader.name, born: time, life: 1.6 }; leaderCooldown = 1.8;
+    EVENTS.push({ f, type: "leader", name: leader.name });
   }
   if (leader) lastLeader = leader.id;
-  if (hold && !endTriggered) { endTriggered = true; burst(400); banner = { text: "ALL-TIME #1", name: leader.name, born: time, life: 999 }; }
+  const top3 = top.slice(0, 3).map((p) => p.id).join();
+  if (lastTop3 && top3 !== lastTop3 && f > cfg.introFrames && !hold) EVENTS.push({ f, type: "swap" });
+  lastTop3 = top3;
+  if (hold && !endTriggered) { EVENTS.push({ f, type: "end" }); endTriggered = true; burst(400); banner = { text: "ALL-TIME #1", name: leader.name, born: time, life: 999 }; }
   if (hold && (f % 20 === 0)) burst(40);
   const sl = seasonLabel(seasons[t < 0.5 ? i : j]);
   if (sl !== lastSeasonLabel) { seasonPop = 1; lastSeasonLabel = sl; }
@@ -378,4 +383,12 @@ window.frame = (f) => {
   return out.toDataURL("image/jpeg", 0.92);
 };
 window.skipTo = (f) => simulateTo(f - 1);
+// Simulate the whole video without rendering and return timed events (for the sound track).
+window.simulateEvents = () => {
+  simulateTo(totalFrames - 1);
+  const seasonFrames = [];
+  for (let i = 0; i < seasons.length - 1; i++) seasonFrames.push(cfg.introFrames + i * cfg.framesPerSeason + Math.ceil(cfg.framesPerSeason / 2));
+  return { fps: cfg.fps, hookFrames: cfg.hookFrames, introFrames: cfg.introFrames, totalFrames,
+    events: EVENTS.map((e) => ({ ...e, f: e.f + cfg.hookFrames })), seasonFrames: seasonFrames.map((f) => f + cfg.hookFrames) };
+};
 window.ready = true;

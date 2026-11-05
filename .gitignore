@@ -4,3 +4,4 @@ previews/
 *.part*.mp4
 *.mp4.txt
 __pycache__/
+audio/
