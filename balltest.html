@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body style="margin:0;background:#8f7bff">
+<script type="module">
+import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { makeBallMaterial, BALL_TILT } from "./ball.js";
+const W=1200,H=1200;
+const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true}); r.setSize(W,H); document.body.appendChild(r.domElement);
+r.toneMapping=THREE.NeutralToneMapping; r.outputColorSpace=THREE.SRGBColorSpace; r.setClearColor(0x8f7bff);
+const s=new THREE.Scene(); s.environment=new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(),0.04).texture; s.environmentIntensity=0.35;
+s.add(new THREE.HemisphereLight(0xffffff,0x8a5cff,0.9));
+const k=new THREE.DirectionalLight(0xffffff,2.2);k.position.set(-6,10,12);s.add(k);
+const rim=new THREE.DirectionalLight(0xff9de0,1.2);rim.position.set(8,-4,-6);s.add(rim);
+const cam=new THREE.PerspectiveCamera(30,1,0.1,100);cam.position.set(0,0,14);
+const mat=makeBallMaterial();
+const tilts=JSON.parse(decodeURIComponent(location.hash.slice(1)||"null"))||[[0.42,-0.62,0.18]];
+const n=Math.ceil(Math.sqrt(tilts.length));
+tilts.forEach((t,i)=>{const pivot=new THREE.Group();const b=new THREE.Mesh(new THREE.SphereGeometry(1,96,64),mat);
+ b.rotation.set(t[0],t[1],t[2],"YXZ");pivot.add(b);pivot.rotation.z=t[3]||0;
+ pivot.position.set(((i%n)-(n-1)/2)*2.4*3/n*1.0, (((n-1)/2)-Math.floor(i/n))*2.4*3/n,0);pivot.scale.setScalar(3/n);s.add(pivot);});
+r.render(s,cam); window.done=true;
+</script></body></html>
