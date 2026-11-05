@@ -173,11 +173,14 @@ function step(f) {
   }
   const leader = top[0];
   leaderCooldown -= dt;
-  if (leader && lastLeader && leader.id !== lastLeader && f > cfg.introFrames && leaderCooldown <= 0 && !hold) {
-    burst(160); banner = { text: "NEW #1!", name: leader.name, born: time, life: 1.6 }; leaderCooldown = 1.8;
+  // Announce every lead change; if one happens during the cooldown it is announced as soon as the
+  // cooldown ends (and skipped only if the lead has flipped back to the last announced player).
+  if (leader && lastLeader === null) lastLeader = leader.id;
+  if (leader && leader.id !== lastLeader && f > cfg.introFrames && leaderCooldown <= 0 && !hold) {
+    burst(160); banner = { text: "NEW #1!", name: leader.name, born: time, life: 1.4 }; leaderCooldown = 1.5;
     EVENTS.push({ f, type: "leader", name: leader.name });
+    lastLeader = leader.id;
   }
-  if (leader) lastLeader = leader.id;
   const top3 = top.slice(0, 3).map((p) => p.id).join();
   if (lastTop3 && top3 !== lastTop3 && f > cfg.introFrames && !hold) EVENTS.push({ f, type: "swap" });
   lastTop3 = top3;

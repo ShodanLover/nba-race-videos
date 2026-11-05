@@ -13,7 +13,7 @@ const cfg = {
   data, title, subtitle, fps: FPS,
   source: "Regular season · NBA/BAA · Data: Basketball-Reference · 2026-27 through Nov",
   framesPerSeason: Math.max(6, Math.round((seconds * FPS) / (data.seasons.length - 1))),
-  introFrames: 24, holdFrames: 5 * FPS,
+  introFrames: 24, holdFrames: Math.round(Number(argOf("--hold") || 3) * FPS),
   hookFrames: Math.round(3.6 * FPS), hook: argOf("--hook") || "ALL-TIME|LEADER",
 };
 
