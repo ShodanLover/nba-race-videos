@@ -5,6 +5,10 @@ Work moved from a laptop (software rendering, ~12 min per video) to a desktop wi
 ## Done on the desktop
 - **Batch rendered**: rebounds, 3-pointers (1980), blocks (1974), steals (1974), assists (1960),
   points (1960), triple-doubles (1960) — each as `videos/<name>.mp4`, `_sfx.mp4` and `_beat.mp4`.
+- **13 more** to make 20: games, minutes, field goals, shots taken, free throws, free throw attempts,
+  offensive and defensive rebounds (1974), turnovers (1978), personal fouls, 3s attempted (1980),
+  games started (1982), 2-pointers (1980). Start years are 1960 or the first season the stat was tracked.
+  Long names are split across both title/hook lines (`ALL-TIME DEFENSIVE|REBOUND LEADER`) so the text stays big.
   `videos/` is not in git; re-run `./batch.sh` (about 30s per stat) to regenerate them.
 - `render.js`: uses the GPU now. It used to force `--use-angle=swiftshader` (software) even on a graphics card.
   Backend is picked with the `GL` env var (`d3d11` default on Windows, `swiftshader` for no-GPU machines).
@@ -16,8 +20,8 @@ Work moved from a laptop (software rendering, ~12 min per video) to a desktop wi
   Known gap: ģ draws its cedilla below instead of as a comma above (no current video uses it).
 
 ## Next
-- Watch the 7 videos before posting. Spot-checked only via preview frames.
-- UPLOAD_KIT.md has copy for points/threes/assists only; write titles/descriptions for the rest.
+- Watch the 20 videos before posting. Spot-checked only via preview frames.
+- UPLOAD_KIT.md has copy for points/threes/assists only; write titles/descriptions for the other 17.
 - Other ideas from UPLOAD_KIT: games played, per-team leaders, single-season races.
 
 ## Setup on a new machine
