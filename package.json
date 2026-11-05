@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@fontsource/lilita-one": "^5.1.0",
+    "playwright": "^1.64.1",
     "three": "^0.169.0"
   }
 }

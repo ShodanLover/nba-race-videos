@@ -122,7 +122,7 @@ function stepConfetti(dt, time) {
 // ---------- state ----------
 let cfg, players, seasons, simFrame = 0, totalFrames;
 const EVENTS = []; let lastTop3 = null;
-let lastLeader = null, leaderCooldown = 0, banner = null, seasonPop = 0, lastSeasonLabel = null, endTriggered = false;
+let maxGain = 1, lastLeader = null, leaderCooldown = 0, banner = null, seasonPop = 0, lastSeasonLabel = null, endTriggered = false;
 const crownState = { x: 0, y: 0 };
 
 function seasonLabel(s) { return `${s - 1}-${String(s).slice(-2)}`; }
@@ -150,8 +150,10 @@ window.setup = async (c) => {
     ballMesh.rotation.copy(BALL_TILT); ball.add(ballMesh);
     stripes.scale.set(1, 1.01, 1.01);
     g.add(cyl, stripes, cap, ball); g.visible = false; scene.add(g);
-    return { ...p, css: "#" + color.getHexString(), g, cyl, stripes, cap, ball, tex, y: -9, vy: 0, vis: 0, val: 0, rank: 99 };
+    return { ...p, css: "#" + color.getHexString(), g, cyl, stripes, cap, ball, tex, y: -9, vy: 0, vis: 0, val: 0, roll: 0, rank: 99 };
   });
+  // biggest single-season gain in the data; a ball makes one full turn per season at that pace
+  maxGain = Math.max(1, ...players.flatMap((p) => p.v.slice(1).map((x, k) => x - p.v[k])));
   return totalFrames;
 };
 
@@ -159,7 +161,11 @@ function step(f) {
   const dt = 1 / cfg.fps, time = f / cfg.fps;
   const { i, t, hold } = timeline(f);
   const j = Math.min(i + 1, seasons.length - 1);
-  for (const p of players) p.val = p.v[i] + (p.v[j] - p.v[i]) * t;
+  for (const p of players) {
+    const nv = p.v[i] + (p.v[j] - p.v[i]) * t;
+    if (f > 0) p.roll += ((nv - p.val) / maxGain) * Math.PI * 2; // spin with the player's own growth
+    p.val = nv;
+  }
   const top = players.filter((p) => p.val > 0).sort((a, b) => b.val - a.val).slice(0, TOP_N);
   players.forEach((p) => (p.rank = 99));
   top.forEach((p, r) => (p.rank = r + 1));
@@ -230,7 +236,7 @@ function render(f) {
     p.tex.repeat.set(1, Math.max(0.01, L / 1.4)); p.tex.offset.y = -time * 0.5;
     p.cap.position.x = X0;
     p.ball.position.x = X0 + L + BALL_R * 0.7;
-    p.ball.rotation.set(0, 0, -(L / BALL_R) * 0.9); // rolls as the bar grows
+    p.ball.rotation.set(0, 0, -(L / BALL_R) * 0.9 - p.roll); // rolls as the bar grows
     // squash & stretch while moving between lanes
     const sq = Math.min(0.25, Math.abs(p.vy) * 0.03);
     p.ball.scale.set(1 + sq, 1 - sq * 0.6, 1);

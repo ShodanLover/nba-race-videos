@@ -21,15 +21,27 @@ On Windows, install ffmpeg (e.g. `winget install ffmpeg`) and make sure `ffmpeg`
 **1. Export the stat.** Columns in `data/totals.csv`: `pts`, `ast`, `trb`, `x3p`, `stl`, `blk`, `g`, `trp_dbl` …
 The second argument is the first season shown (career totals still include every earlier season).
 ```bash
-python3 export_data.py trb 1990 data_trb_1990.json
+python3 export_data.py trb 1960 data_trb_1960.json
 ```
-Recommended start years: `1990` for points/assists/rebounds, `2000` for 3-pointers.
+Recommended start years — pick one where the top 10 is still active, or the counters sit frozen
+(e.g. rebounds from 1990: 9 of the top 10 were already retired). "Moving" = average top-10 players
+still adding to their total each season:
+
+| Stat | Start | Moving |
+|---|---|---|
+| `x3p` | 1980 | 5.9/10 |
+| `blk` | 1974 | 3.9/10 |
+| `stl` | 1974 | 3.6/10 |
+| `ast` | 1960 | 2.4/10 |
+| `pts` | 1960 | 2.3/10 |
+| `trp_dbl` | 1960 | 2.0/10 |
+| `trb` | 1960 | 1.7/10 |
 
 **2. Render the video.** `18` is the race length in seconds. `|` splits a title onto two lines.
 `--hook` is the text in "Think you can guess who the current ___ is?".
 ```bash
 mkdir -p videos
-node render.js data_trb_1990.json "ALL-TIME|REBOUND LEADERS" "Career regular-season rebounds" videos/rebounds.mp4 18 --hook "ALL-TIME|REBOUND LEADER"
+node render.js data_trb_1960.json "ALL-TIME|REBOUND LEADERS" "Career regular-season rebounds" videos/rebounds.mp4 18 --hook "ALL-TIME|REBOUND LEADER"
 ```
 Options: `--hold 3` (seconds of the ending, default 3), `--preview 10,300,600` (write a few JPG frames
 instead of the whole video, handy for checking a layout), `WORKERS=8` env var for more parallel renderers.
@@ -37,7 +49,7 @@ instead of the whole video, handy for checking a layout), `WORKERS=8` env var fo
 **3. Add sound.** First write the event timings (use the *same* data file, race length and hook as step 2),
 then build the audio:
 ```bash
-node render.js data_trb_1990.json "ALL-TIME|REBOUND LEADERS" "Career regular-season rebounds" x 18 --hook "ALL-TIME|REBOUND LEADER" --events audio/ev_rebounds.json
+node render.js data_trb_1960.json "ALL-TIME|REBOUND LEADERS" "Career regular-season rebounds" x 18 --hook "ALL-TIME|REBOUND LEADER" --events audio/ev_rebounds.json
 python3 sound.py audio/ev_rebounds.json videos/rebounds.mp4
 python3 sound.py audio/ev_rebounds.json videos/rebounds.mp4 --beat
 ```
