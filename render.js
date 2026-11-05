@@ -43,7 +43,9 @@ async function grab(page, f) {
 (async () => {
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const port = server.address().port;
-  const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+  // GL=d3d11 (default, Windows GPU), GL=gl / GL=vulkan (other GPUs), GL=swiftshader (no graphics card)
+  const gl = process.env.GL || (process.platform === "win32" ? "d3d11" : "gl");
+  const browser = await chromium.launch({ args: [`--use-angle=${gl}`, "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-gpu"] });
 
   const eventsOut = argOf("--events");
   if (eventsOut) {

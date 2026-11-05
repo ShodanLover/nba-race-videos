@@ -80,6 +80,11 @@ curl -L -o data/totals.csv "https://raw.githubusercontent.com/sumitrodatta/bball
 - `balltest.html` – close-up test page for the basketball
 - `UPLOAD_KIT.md` – titles, descriptions and posting plan
 
+## Batch
+`./batch.sh` renders every stat in the table above (plus rebounds) in the standard format, with both sound
+versions. `./batch.sh blocks steals` renders just those. Edit the `JOBS` list to change titles or start years.
+
 ## Speed
-Rendering uses WebGL. On a computer with a graphics card it takes a few minutes per video; on a machine
-without one (software rendering) expect ~20–25 minutes for a 25-second video.
+Rendering uses WebGL on the graphics card (`GL=d3d11` on Windows by default; `GL=gl` or `GL=vulkan` elsewhere).
+A 25-second video takes ~15 seconds on a GTX 1660 Ti, ~30 seconds including sound. On a machine without a
+graphics card, run with `GL=swiftshader` (software rendering) and expect ~12–25 minutes per video.

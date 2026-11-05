@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Render the full batch in the approved 25s format: video, then _sfx and _beat versions.
+# Usage: ./batch.sh            (all)
+#        ./batch.sh blocks     (just the named ones)
+set -euo pipefail
+cd "$(dirname "$0")"
+mkdir -p videos audio
+PY=${PY:-python3}; command -v "$PY" >/dev/null || PY=python
+
+#       name          stat     start  title                          subtitle                                  hook
+JOBS=(
+  "rebounds|trb|1960|ALL-TIME|REBOUND LEADERS|Career regular-season rebounds|ALL-TIME|REBOUND LEADER"
+  "threes|x3p|1980|ALL-TIME|3-POINT LEADERS|Career regular-season 3-pointers made|ALL-TIME|3-POINT LEADER"
+  "blocks|blk|1974|ALL-TIME|BLOCKS LEADERS|Career regular-season blocks|ALL-TIME|BLOCKS LEADER"
+  "steals|stl|1974|ALL-TIME|STEALS LEADERS|Career regular-season steals|ALL-TIME|STEALS LEADER"
+  "assists|ast|1960|ALL-TIME|ASSIST LEADERS|Career regular-season assists|ALL-TIME|ASSIST LEADER"
+  "points|pts|1960|ALL-TIME|SCORING LEADERS|Career regular-season points|ALL-TIME|SCORING LEADER"
+  "triple_doubles|trp_dbl|1960|ALL-TIME|TRIPLE-DOUBLE LEADERS|Career regular-season triple-doubles|ALL-TIME|TRIPLE-DOUBLE LEADER"
+)
+
+for job in "${JOBS[@]}"; do
+  IFS='|' read -r name stat start t1 t2 sub h1 h2 <<<"$job"
+  if [ $# -gt 0 ] && [[ " $* " != *" $name "* ]]; then continue; fi
+  data="data_${stat}_${start}.json"
+  echo "=== $name ($stat from $start)"
+  "$PY" export_data.py "$stat" "$start" "$data"
+  node render.js "$data" "$t1|$t2" "$sub" "videos/$name.mp4" 18 --hook "$h1|$h2"
+  node render.js "$data" "$t1|$t2" "$sub" x 18 --hook "$h1|$h2" --events "audio/ev_$name.json"
+  "$PY" sound.py "audio/ev_$name.json" "videos/$name.mp4"
+  "$PY" sound.py "audio/ev_$name.json" "videos/$name.mp4" --beat
+done

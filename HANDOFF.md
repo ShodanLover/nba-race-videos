@@ -1,31 +1,24 @@
 # Handoff — where things stand (2026-11-05)
 
-Work moved from a laptop (software rendering, ~12 min per video) to a desktop with a graphics card.
+Work moved from a laptop (software rendering, ~12 min per video) to a desktop with a GTX 1660 Ti.
 
-## Approved
-The **rebounds** video is approved as the template for mass production:
-25s format (`18` second race, default `--hold 3`), start year 1960, both sound versions (`_sfx` and `_beat`).
-```bash
-python3 export_data.py trb 1960 data_trb_1960.json
-node render.js data_trb_1960.json "ALL-TIME|REBOUND LEADERS" "Career regular-season rebounds" videos/rebounds.mp4 18 --hook "ALL-TIME|REBOUND LEADER"
-node render.js data_trb_1960.json "ALL-TIME|REBOUND LEADERS" "Career regular-season rebounds" x 18 --hook "ALL-TIME|REBOUND LEADER" --events audio/ev_rebounds.json
-python3 sound.py audio/ev_rebounds.json videos/rebounds.mp4
-python3 sound.py audio/ev_rebounds.json videos/rebounds.mp4 --beat
-```
-The rendered rebounds videos are not in git; re-render them here if needed (`videos/` and `audio/` are ignored).
+## Done on the desktop
+- **Batch rendered**: rebounds, 3-pointers (1980), blocks (1974), steals (1974), assists (1960),
+  points (1960), triple-doubles (1960) — each as `videos/<name>.mp4`, `_sfx.mp4` and `_beat.mp4`.
+  `videos/` is not in git; re-run `./batch.sh` (about 30s per stat) to regenerate them.
+- `render.js`: uses the GPU now. It used to force `--use-angle=swiftshader` (software) even on a graphics card.
+  Backend is picked with the `GL` env var (`d3d11` default on Windows, `swiftshader` for no-GPU machines).
+  Full video render: ~15s, down from ~12 min.
+- `batch.sh`: the whole pipeline (export → render → events → sfx + beat) for every stat, or the ones named.
+- `scene.js`: the title shrinks to fit (TRIPLE-DOUBLE LEADERS ran off both edges).
+- `scene.js`: accented names (Jokić, Dončić, Šarūnas, Türkoğlu…). Lilita One only has Latin-1 glyphs, so
+  these fell back to a thin system font. `text()` now draws base letter + Lilita's own accent (caron = flipped ˆ).
+  Known gap: ģ draws its cedilla below instead of as a comma above (no current video uses it).
 
-## Changes made on the laptop
-- `scene.js`: basketballs now spin with each player's own growth (one full turn per season at the
-  data's fastest single-season pace). Before, spin was tied to bar length relative to the leader, so
-  with later start years the balls barely turned.
-- `package.json`: added `playwright` (render.js needs it; it wasn't listed). Pinned via the lockfile to
-  1.64.1 because 1.65.0 pointed at an unpublished `playwright-core` at the time.
-- README: start-year table (how much each stat's top 10 actually moves).
-
-## Next: the batch
-Same command pattern as above, start years from the README table. Suggested order (most movement first):
-3-pointers (1980), blocks (1974), steals (1974), assists (1960), points (1960), triple-doubles (1960).
-Spot-check each with `--preview` before the full render.
+## Next
+- Watch the 7 videos before posting. Spot-checked only via preview frames.
+- UPLOAD_KIT.md has copy for points/threes/assists only; write titles/descriptions for the rest.
+- Other ideas from UPLOAD_KIT: games played, per-team leaders, single-season races.
 
 ## Setup on a new machine
 ```bash
@@ -35,3 +28,4 @@ npx playwright install chromium
 mkdir -p videos audio
 ```
 Plus ffmpeg on the PATH. `data/totals.csv` is in the repo; refresh it with the curl command in the README.
+On Windows, clone with `git -c core.longpaths=true clone …` if the path is deep (the pack file name is long).

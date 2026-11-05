@@ -207,10 +207,44 @@ function barEnd(p) { return X0 + barLen(p) + BALL_R * 0.7; }
 const v3 = new THREE.Vector3();
 function toScreen(x, y, z = 0) { v3.set(x, y, z).project(camera); return [(v3.x + 1) / 2 * W, (1 - v3.y) / 2 * H]; }
 
+// Lilita only covers Latin-1, so letters like ć č š ğ are drawn as base letter + one of its own accent glyphs
+// (caron and breve are a flipped circumflex). Returns null when the string needs none of this.
+const MARKS = { "́": "´", "̀": "`", "̈": "¨", "̂": "ˆ", "̃": "˜", "̊": "˚", "̌": "ˆ^", "̆": "ˆ^", "̄": "¯", "̧": "¸", "̦": "¸" };
+function composeOps(ctx, s, x, y, size, align) {
+  if (![...s].some((ch) => ch.charCodeAt(0) > 0xff)) return null;
+  const ops = []; let w = 0;
+  for (const ch of s) {
+    const [base, mark] = ch.charCodeAt(0) > 0xff ? [...ch.normalize("NFD")] : [ch];
+    const bw = ctx.measureText(base).width;
+    ops.push({ s: base, dx: w, dy: 0 });
+    if (MARKS[mark]) {
+      const g = MARKS[mark][0], flip = MARKS[mark].length > 1;
+      const up = base === base.toUpperCase() && base !== base.toLowerCase() ? -size * 0.2 : 0; // capitals: lift above the cap height
+      ops.push({ s: g, dx: w + bw / 2, dy: up + (flip ? size * 0.06 : 0), center: true, flip });
+    }
+    w += bw;
+  }
+  const x0 = align === "center" ? x - w / 2 : align === "right" ? x - w : x;
+  return ops.map((o) => ({ ...o, x: x0 + o.dx, y: y + o.dy }));
+}
+function drawOps(ctx, ops, s, x, y, how) {
+  if (!ops) return ctx[how](s, x, y);
+  const align = ctx.textAlign;
+  for (const o of ops) {
+    ctx.textAlign = o.center ? "center" : "left";
+    if (!o.flip) { ctx[how](o.s, o.x, o.y); continue; }
+    const m = ctx.measureText(o.s), cy = o.y + (m.actualBoundingBoxDescent - m.actualBoundingBoxAscent) / 2;
+    ctx.save(); ctx.translate(o.x, cy); ctx.scale(1, -1); ctx[how](o.s, 0, o.y - cy); ctx.restore();
+  }
+  ctx.textAlign = align;
+}
+
 function text(ctx, s, x, y, size, fill, { stroke = "#2a0f5c", sw = size * 0.2, align = "center", shadow = true } = {}) {
   ctx.font = `${size}px Lilita`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
-  if (shadow) { ctx.lineWidth = sw; ctx.strokeStyle = "rgba(30,0,70,0.55)"; ctx.strokeText(s, x, y + size * 0.1); ctx.fillStyle = "rgba(30,0,70,0.55)"; ctx.fillText(s, x, y + size * 0.1); }
-  ctx.lineWidth = sw; ctx.strokeStyle = stroke; ctx.strokeText(s, x, y); ctx.fillStyle = fill; ctx.fillText(s, x, y);
+  const ops = composeOps(ctx, s, x, y, size, align), sy = size * 0.1;
+  const shifted = ops && ops.map((o) => ({ ...o, y: o.y + sy }));
+  if (shadow) { ctx.lineWidth = sw; ctx.strokeStyle = "rgba(30,0,70,0.55)"; drawOps(ctx, shifted, s, x, y + sy, "strokeText"); ctx.fillStyle = "rgba(30,0,70,0.55)"; drawOps(ctx, shifted, s, x, y + sy, "fillText"); }
+  ctx.lineWidth = sw; ctx.strokeStyle = stroke; drawOps(ctx, ops, s, x, y, "strokeText"); ctx.fillStyle = fill; drawOps(ctx, ops, s, x, y, "fillText");
 }
 function pill(ctx, x, y, w, h, fill, stroke) {
   ctx.beginPath(); ctx.roundRect(x - w / 2, y - h / 2, w, h, h / 2);
@@ -279,7 +313,7 @@ function render(f) {
   const ti = elastic(Math.min(1, time / 0.7));
   ctx.save(); ctx.translate(W / 2, 128); ctx.scale(ti, ti); ctx.rotate(Math.sin(time * 1.6) * 0.015);
   const words = cfg.title.split("|");
-  words.forEach((w, k) => text(ctx, w, 0, (k - (words.length - 1) / 2) * 104, 100, k === 0 ? "#ffffff" : "#fff35c", { sw: 20 }));
+  words.forEach((w, k) => { const size = fitText(ctx, w, 100, W - 80); text(ctx, w, 0, (k - (words.length - 1) / 2) * 104, size, k === 0 ? "#ffffff" : "#fff35c", { sw: size / 5 }); });
   ctx.restore();
   ctx.save(); ctx.translate(W / 2, 262); ctx.scale(ti, ti);
   ctx.font = "40px Lilita"; const sw = ctx.measureText(cfg.subtitle).width + 70;
