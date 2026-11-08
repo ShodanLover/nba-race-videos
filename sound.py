@@ -211,6 +211,42 @@ def add(track, s, at, gain=1.0):
     track[i:j] += s[: j - i] * gain
 
 
+# ---------------- recorded sound set (editorial style) ----------------
+# A game-clock tick on every shot-clock second and the horn at 0.0, from real recordings in sfx/
+# (clock_tick.* and buzzer.*, any format ffmpeg reads). No music; that gets added in the app.
+SFX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sfx")
+
+
+def load_sample(name, max_dur=None):
+    found = [f for f in os.listdir(SFX_DIR) if os.path.splitext(f)[0] == name] if os.path.isdir(SFX_DIR) else []
+    if not found:
+        sys.exit(f"missing sound file: put a recording named {name}.wav or {name}.mp3 in {SFX_DIR}")
+    raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", os.path.join(SFX_DIR, found[0]), "-f", "f32le", "-ac", "1", "-ar", str(SR), "-"],
+                         capture_output=True, check=True).stdout
+    x = np.frombuffer(raw, np.float32).astype(np.float64)
+    start = np.argmax(np.abs(x) > np.max(np.abs(x)) * 0.05)  # trim leading silence so hits land on the frame
+    x = x[start:]
+    if max_dur:
+        x = x[: int(max_dur * SR)]
+        fade = min(len(x), int(0.02 * SR))
+        x[-fade:] *= np.linspace(1, 0, fade)
+    return x / np.max(np.abs(x))
+
+
+def build_editorial(ev):
+    fps = ev["fps"]
+    total = int(ev["totalFrames"] / fps * SR)
+    sfx = np.zeros(total)
+    tick, horn = load_sample("clock_tick", max_dur=0.9), load_sample("buzzer")
+    for f in ev["clockFrames"]:
+        add(sfx, tick, f / fps, 0.45)
+    end = next((e["f"] for e in ev["events"] if e["type"] == "end"), None)
+    if end is not None:
+        add(sfx, horn, end / fps, 1.0)
+    peak = np.max(np.abs(sfx))
+    return sfx / peak * 0.9
+
+
 def write_wav(path, x):
     x = np.tanh(x * 1.1) * 0.95  # soft limiter
     pcm = (x * 32767).astype(np.int16)
@@ -221,6 +257,8 @@ def write_wav(path, x):
 
 def build(events_path, with_beat):
     ev = json.load(open(events_path))
+    if ev.get("style") == "editorial":
+        return build_editorial(ev)
     fps = ev["fps"]
     dur = ev["totalFrames"] / fps
     total = int(dur * SR)
@@ -279,6 +317,9 @@ def build(events_path, with_beat):
 if __name__ == "__main__":
     events, video = sys.argv[1], sys.argv[2]
     with_beat = "--beat" in sys.argv
+    if with_beat and json.load(open(events)).get("style") == "editorial":
+        print("editorial style has no beat version (music gets added in the app); skipped")
+        sys.exit(0)
     mix = build(events, with_beat)
     base = os.path.splitext(video)[0]
     wav = base + ("_beat.wav" if with_beat else "_sfx.wav")

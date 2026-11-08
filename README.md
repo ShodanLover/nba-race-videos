@@ -72,6 +72,10 @@ curl -L -o data/totals.csv "https://raw.githubusercontent.com/sumitrodatta/bball
 ```
 
 ## Files
+- `editorial.html` / `editorial.js` – the current black-and-white style (`render.js … 24 --style editorial`):
+  question hook, 24s shot-clock race, follow screen. `--brand-font` picks the end-screen lettering
+- `sfx/` – recorded clock tick and buzzer used by `sound.py` for the editorial style
+- `assets/` – Certified Bucketry logo
 - `scene.js` – the 3D scene (three.js): bars, crown, confetti, text, hook intro, timed events
 - `ball.js` – procedural basketball (real 8-panel seam layout, pebbled leather)
 - `render.js` – drives headless Chrome, encodes MP4 with ffmpeg; also `--preview` and `--events` modes
@@ -81,8 +85,8 @@ curl -L -o data/totals.csv "https://raw.githubusercontent.com/sumitrodatta/bball
 - `UPLOAD_KIT.md` – titles, descriptions and posting plan
 
 ## Batch
-`./batch.sh` renders every stat in the table above (plus rebounds) in the standard format, with both sound
-versions. `./batch.sh blocks steals` renders just those. Edit the `JOBS` list to change titles or start years.
+`./batch.sh` renders every stat in the table above (plus rebounds) in the editorial style, 30s each,
+as a silent `.mp4` and an `_sfx.mp4` with ticks and buzzer. `./batch.sh blocks steals` renders just those. Edit the `JOBS` list to change titles or start years.
 
 ## Speed
 Rendering uses WebGL on the graphics card (`GL=d3d11` on Windows by default; `GL=gl` or `GL=vulkan` elsewhere).

@@ -1,4 +1,18 @@
-# Handoff — where things stand (2026-11-05)
+# Handoff — where things stand (2026-11-08)
+
+## Editorial style + brand (2026-11-08) — the current look
+Channel name: **Certified Bucketry** (logo in `assets/`). The toy 3D scene was too young for the audience, so
+all 20 videos are now rendered in a black-and-white editorial style (`editorial.html` / `editorial.js`,
+`render.js --style editorial`):
+- 30s total: 2.4s question hook → 24s race on a shot clock (clock turns red under 5s) → 3.6s end screen.
+- Leader as a huge Anton number + Playfair italic name, ranks 2–10 as a list; pure black and white, no grey.
+- Thin border around the video, with a thick line tracing it as the clock runs (closes at the buzzer).
+- End: "FOLLOW FOR MORE" + logo + CERTIFIEDBUCKETRY in Syncopate Bold (`--brand-font`), then everything but
+  the logo fades out.
+- Sound (`_sfx.mp4`): real recorded game-clock tick each second and an arena buzzer at 0.0, from `sfx/`
+  (Pixabay Content License; originals in `sfx/raw/`). No music — that gets added in the app. No `_beat` version.
+- `./batch.sh` renders this style; the old toy scene still works without `--style`.
+
 
 Work moved from a laptop (software rendering, ~12 min per video) to a desktop with a GTX 1660 Ti.
 

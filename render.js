@@ -7,18 +7,22 @@ const previewIdx = process.argv.indexOf("--preview");
 const preview = previewIdx > 0 ? process.argv[previewIdx + 1].split(",").map(Number) : null;
 const argOf = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : null; };
 const FPS = 30, WORKERS = Number(process.env.WORKERS || 4);
+const STYLE = argOf("--style") || "toy"; // toy (3D candy scene) | editorial (black and white)
 const data = JSON.parse(fs.readFileSync(dataFile));
 const seconds = Number(secondsArg) > 0 ? Number(secondsArg) : 45;
 const cfg = {
   data, title, subtitle, fps: FPS,
   source: "Regular season · NBA/BAA · Data: Basketball-Reference · 2026-27 through Nov",
   framesPerSeason: Math.max(6, Math.round((seconds * FPS) / (data.seasons.length - 1))),
-  introFrames: 24, holdFrames: Math.round(Number(argOf("--hold") || 3) * FPS),
-  hookFrames: Math.round(3.6 * FPS), hook: argOf("--hook") || "ALL-TIME|LEADER",
+  // editorial: the race is exactly `seconds` long (a 24s shot clock) and hook + race + hold = 30s
+  raceFrames: Math.round(seconds * FPS),
+  introFrames: 24, holdFrames: Math.round(Number(argOf("--hold") || (STYLE === "editorial" ? 3.6 : 3)) * FPS),
+  hookFrames: Math.round((STYLE === "editorial" ? 2.4 : 3.6) * FPS), hook: argOf("--hook") || "ALL-TIME|LEADER",
+  brandFont: argOf("--brand-font") || "syncopate",
 };
 
 const root = __dirname;
-const types = { ".html": "text/html", ".js": "text/javascript", ".woff2": "font/woff2", ".json": "application/json" };
+const types = { ".html": "text/html", ".js": "text/javascript", ".woff2": "font/woff2", ".json": "application/json", ".jpg": "image/jpeg", ".png": "image/png" };
 const server = http.createServer((req, res) => {
   const p = path.join(root, decodeURIComponent(req.url.split("?")[0]));
   if (!p.startsWith(root) || !fs.existsSync(p)) { res.writeHead(404); return res.end(); }
@@ -29,7 +33,7 @@ const server = http.createServer((req, res) => {
 async function openPage(browser, port) {
   const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
   page.on("pageerror", (e) => console.error("page error:", e.message));
-  await page.goto(`http://127.0.0.1:${port}/scene.html`);
+  await page.goto(`http://127.0.0.1:${port}/${STYLE === "editorial" ? "editorial" : "scene"}.html`);
   await page.waitForFunction(() => window.ready === true);
   const total = await page.evaluate((c) => window.setup(c), cfg);
   return { page, total };

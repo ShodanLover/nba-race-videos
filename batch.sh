@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Render the full batch in the approved 25s format: video, then _sfx and _beat versions.
+# Render the full batch in the editorial style: 2.4s hook + 24s shot-clock race + 3.6s end screen = 30s.
+# Writes videos/<name>.mp4 (silent) and videos/<name>_sfx.mp4 (clock ticks + buzzer; music gets added in the app).
 # Usage: ./batch.sh            (all)
 #        ./batch.sh blocks     (just the named ones)
 set -euo pipefail
@@ -36,9 +37,8 @@ for job in "${JOBS[@]}"; do
   if [ $# -gt 0 ] && [[ " $* " != *" $name "* ]]; then continue; fi
   data="data_${stat}_${start}.json"
   echo "=== $name ($stat from $start)"
-  "$PY" export_data.py "$stat" "$start" "$data"
-  node render.js "$data" "$t1|$t2" "$sub" "videos/$name.mp4" 18 --hook "$h1|$h2"
-  node render.js "$data" "$t1|$t2" "$sub" x 18 --hook "$h1|$h2" --events "audio/ev_$name.json"
+  [ -f "$data" ] || "$PY" export_data.py "$stat" "$start" "$data"
+  node render.js "$data" "$t1|$t2" "$sub" "videos/$name.mp4" 24 --style editorial --hook "$h1|$h2"
+  node render.js "$data" "$t1|$t2" "$sub" x 24 --style editorial --hook "$h1|$h2" --events "audio/ev_$name.json"
   "$PY" sound.py "audio/ev_$name.json" "videos/$name.mp4"
-  "$PY" sound.py "audio/ev_$name.json" "videos/$name.mp4" --beat
 done
